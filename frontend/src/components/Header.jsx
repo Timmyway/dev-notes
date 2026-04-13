@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Code, Download, Search, Upload } from "lucide-react";
 
 export default function Header({
+  saving,
   onLogout,
   showSearch,
   setShowSearch,
@@ -11,9 +12,7 @@ export default function Header({
   exportNotes,
   fileInputRef,
   importNotes,
-}) {
-  const [saving, setSaving] = useState(false); // optional, or lift up
-
+}) {  
   return (
     <>
       <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">

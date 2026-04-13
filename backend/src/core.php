@@ -1,9 +1,20 @@
 <?php
-// src/core.php
 
-// DB is now one level up from public
-define('DB_PATH', dirname(__DIR__) . '/devnotes.db');
+require_once __DIR__ . '/../vendor/autoload.php';
 
+// ── LOAD .ENV ───────────────────────────────────────────
+$dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
+$dotenv->load();
+
+// ── CONFIG ──────────────────────────────────────────────
+$config = require __DIR__ . '/config.php';
+
+define(
+    'DB_PATH',
+    $_ENV['DB_PATH'] ?? dirname(__DIR__) . '/devnotes.db'
+);
+
+// ── GET HEADERS FALLBACK ────────────────────────────────
 if (!function_exists('getallheaders')) {
     function getallheaders()
     {
@@ -17,14 +28,31 @@ if (!function_exists('getallheaders')) {
     }
 }
 
+// ── DB INIT ─────────────────────────────────────────────
 function initDatabase()
 {
     $db = new SQLite3(DB_PATH);
-    $db->exec('CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY, title TEXT NOT NULL, content TEXT, mode TEXT DEFAULT "markdown", created_at TEXT NOT NULL, updated_at TEXT NOT NULL)');
-    $db->exec('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, api_token TEXT UNIQUE)');
+
+    $db->exec('CREATE TABLE IF NOT EXISTS notes (
+        id INTEGER PRIMARY KEY,
+        title TEXT NOT NULL,
+        content TEXT,
+        mode TEXT DEFAULT "markdown",
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )');
+
+    $db->exec('CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        api_token TEXT UNIQUE
+    )');
+
     return $db;
 }
 
+// ── RESPONSE HELPERS ────────────────────────────────────
 function jsonResponse($data, $statusCode = 200)
 {
     http_response_code($statusCode);
@@ -37,6 +65,7 @@ function errorResponse($message, $statusCode = 400)
     jsonResponse(['error' => $message], $statusCode);
 }
 
+// ── AUTH ────────────────────────────────────────────────
 function verifyToken($db)
 {
     $headers = getallheaders();
@@ -47,22 +76,26 @@ function verifyToken($db)
     }
 
     $token = $matches[1];
+
     $stmt = $db->prepare('SELECT id FROM users WHERE api_token = :token');
     $stmt->bindValue(':token', $token, SQLITE3_TEXT);
+
     $user = $stmt->execute()->fetchArray(SQLITE3_ASSOC);
 
     if (!$user) {
         errorResponse('Invalid token', 401);
     }
+
     return $user;
 }
 
-// --- Action Handlers ---
-
+// ── ACTIONS ─────────────────────────────────────────────
 function getAllNotes($db)
 {
     $result = $db->query('SELECT * FROM notes ORDER BY updated_at DESC');
+
     $notes = [];
+
     while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
         $notes[] = [
             'id' => (int)$row['id'],
@@ -73,18 +106,27 @@ function getAllNotes($db)
             'updatedAt' => $row['updated_at']
         ];
     }
+
     jsonResponse($notes);
 }
 
 function saveAllNotes($db)
 {
     $data = json_decode(file_get_contents('php://input'), true);
-    if (!isset($data['notes'])) errorResponse('Invalid format');
+
+    if (!isset($data['notes'])) {
+        errorResponse('Invalid format');
+    }
 
     $db->exec('BEGIN TRANSACTION');
+
     try {
         $db->exec('DELETE FROM notes');
-        $stmt = $db->prepare('INSERT INTO notes (id, title, content, mode, created_at, updated_at) VALUES (:id, :title, :content, :mode, :created_at, :updated_at)');
+
+        $stmt = $db->prepare('
+            INSERT INTO notes (id, title, content, mode, created_at, updated_at)
+            VALUES (:id, :title, :content, :mode, :created_at, :updated_at)
+        ');
 
         foreach ($data['notes'] as $note) {
             $stmt->bindValue(':id', $note['id'], SQLITE3_INTEGER);
@@ -93,9 +135,12 @@ function saveAllNotes($db)
             $stmt->bindValue(':mode', $note['mode'] ?? 'markdown', SQLITE3_TEXT);
             $stmt->bindValue(':created_at', $note['createdAt'], SQLITE3_TEXT);
             $stmt->bindValue(':updated_at', $note['updatedAt'], SQLITE3_TEXT);
+
             $stmt->execute();
         }
+
         $db->exec('COMMIT');
+
         jsonResponse(['success' => true]);
     } catch (Exception $e) {
         $db->exec('ROLLBACK');

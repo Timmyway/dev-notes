@@ -38,7 +38,7 @@ export const useNotes = (token, onUnauthorized) => {
         await service.saveAllNotes([welcomeNote]);
       }
     } catch (err) {
-      console.error("Failed to load notes:", err);      
+      console.error("Failed to load notes:", err);
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ export const useNotes = (token, onUnauthorized) => {
 
   const debouncedSave = (updatedNotes) => {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(() => saveNotes(updatedNotes), 500);
+    saveTimeoutRef.current = setTimeout(() => saveNotes(updatedNotes), 1000);
   };
 
   const createNote = () => {
@@ -80,6 +80,8 @@ export const useNotes = (token, onUnauthorized) => {
     saveNotes(updatedNotes);
   };
 
+  const DEBOUNCED_FIELDS = new Set(["content", "title"]);
+
   const updateNote = (id, updates) => {
     const updatedNotes = notes.map((note) =>
       note.id === id
@@ -87,7 +89,11 @@ export const useNotes = (token, onUnauthorized) => {
         : note,
     );
     setNotes(updatedNotes);
-    if ("content" in updates) debouncedSave(updatedNotes);
+
+    const shouldDebounce = Object.keys(updates).some((k) =>
+      DEBOUNCED_FIELDS.has(k),
+    );
+    if (shouldDebounce) debouncedSave(updatedNotes);
     else saveNotes(updatedNotes);
   };
 
