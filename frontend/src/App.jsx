@@ -68,7 +68,6 @@ const App = () => {
   return (
     <div className="flex flex-col h-screen bg-gray-900 text-gray-100">
       <Header
-        saving={saving}
         onLogout={handleLogout}
         showSearch={showSearch}
         setShowSearch={setShowSearch}
