@@ -1,7 +1,6 @@
 // services/api.js
 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8600";
 export { API_URL };
-console.log(API_URL);
 
 /**
  * Helper to ensure we don't have double slashes when joining base URL and endpoint
