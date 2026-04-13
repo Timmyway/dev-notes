@@ -32,3 +32,10 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Local environment variables
+.env
+.env.local
+.env.development
+.env.test.local
+.env.production

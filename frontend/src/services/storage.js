@@ -2,34 +2,43 @@
 import { apiFetch, API_URL } from "./api";
 
 export const StorageService = (token, onUnauthorized) => ({
+  // GET /notes
   getAllNotes: () =>
-    apiFetch(`${API_URL}?action=getAllNotes`, {}, token, onUnauthorized),
+    apiFetch("/notes", { method: "GET" }, token, onUnauthorized),
+
+  // POST /notes
   saveAllNotes: (notes) =>
     apiFetch(
-      `${API_URL}?action=saveAllNotes`,
+      "/notes",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ notes }),
       },
       token,
       onUnauthorized,
     ),
+
+  // POST /export
   exportData: () =>
-    apiFetch(`${API_URL}?action=exportData`, {}, token, onUnauthorized).then(
+    apiFetch("/export", { method: "POST" }, token, onUnauthorized).then(
       (notes) => JSON.stringify(notes, null, 2),
     ),
+
+  // POST /import
   importData: (jsonString) => {
-    const notes = JSON.parse(jsonString);
-    return apiFetch(
-      `${API_URL}?action=importData`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(notes),
-      },
-      token,
-      onUnauthorized,
-    ).then(() => notes);
+    try {
+      const notes = JSON.parse(jsonString);
+      return apiFetch(
+        "/import",
+        {
+          method: "POST",
+          body: JSON.stringify(notes),
+        },
+        token,
+        onUnauthorized,
+      ).then(() => notes);
+    } catch (error) {
+      return Promise.reject(new Error("Invalid JSON format"));
+    }
   },
 });
