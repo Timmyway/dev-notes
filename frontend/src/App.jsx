@@ -1,3 +1,5 @@
+// frontend\src\App.jsx
+
 import React, { useState, useRef } from "react";
 import Login from "./components/Login";
 import Header from "./components/Header";
@@ -22,6 +24,7 @@ const App = () => {
     createNote,
     updateNote,
     deleteNote,
+    reorderNotes,
     exportNotes,
     importNotes,
   } = useNotes(token, () => {
@@ -51,7 +54,6 @@ const App = () => {
   }
 
   if (!notes.length) {
-    // Prevent rendering editor/tabs if no notes loaded
     return null;
   }
 
@@ -94,6 +96,7 @@ const App = () => {
         onSelectTab={setActiveTab}
         onDeleteNote={deleteNote}
         onCreateNote={createNote}
+        onReorderNotes={reorderNotes}
       />
 
       <Editor activeNote={activeNote} updateNote={updateNote} />

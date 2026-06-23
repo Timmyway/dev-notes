@@ -9,11 +9,10 @@ export const useNotes = (token, onUnauthorized) => {
   const saveTimeoutRef = useRef(null);
 
   const service = StorageService(token, () => {
-    // Called when API returns 401/403
     setNotes([]);
     setActiveTab(null);
-    setLoading(false); // stop loading immediately
-    onUnauthorized?.(); // triggers App to remove token
+    setLoading(false);
+    onUnauthorized?.();
   });
 
   const loadNotes = async () => {
@@ -46,7 +45,7 @@ export const useNotes = (token, onUnauthorized) => {
 
   useEffect(() => {
     if (token) loadNotes();
-    else setLoading(false); // no token => stop loading
+    else setLoading(false);
   }, [token]);
 
   const saveNotes = async (updatedNotes) => {
@@ -105,6 +104,11 @@ export const useNotes = (token, onUnauthorized) => {
     saveNotes(updatedNotes);
   };
 
+  const reorderNotes = (reorderedNotes) => {
+    setNotes(reorderedNotes);
+    saveNotes(reorderedNotes);
+  };
+
   const exportNotes = async () => {
     try {
       const data = await service.exportData();
@@ -145,6 +149,7 @@ export const useNotes = (token, onUnauthorized) => {
     createNote,
     updateNote,
     deleteNote,
+    reorderNotes,
     exportNotes,
     importNotes,
   };
